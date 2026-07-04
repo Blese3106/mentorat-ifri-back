@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Mentor;
+use App\Notifications\MentorApplicationApproved;
+use App\Notifications\MentorApplicationRejected;
 use Illuminate\Http\Request;
 
 class AdminMentorController extends Controller
@@ -39,6 +41,9 @@ class AdminMentorController extends Controller
 
         $mentor->update(['status' => 'approved']);
 
+        $mentor->notify(new MentorApplicationApproved());
+        $mentor->user->notify(new MentorApplicationApproved());
+
         return response()->json(['message' => 'Mentor approuvé. Il peut maintenant se connecter.']);
     }
 
@@ -63,6 +68,9 @@ class AdminMentorController extends Controller
             // Sécurité : si pas de user lié, on marque juste comme rejeté
             $mentor->update(['status' => 'rejected']);
         }
+
+        $reason = $request->input('reason');
+        $mentor->notify(new MentorApplicationRejected($reason));
 
         return response()->json(['message' => 'Candidature rejetée. L\'email est de nouveau disponible.']);
     }

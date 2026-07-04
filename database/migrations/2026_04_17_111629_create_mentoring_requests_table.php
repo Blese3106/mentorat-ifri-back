@@ -12,8 +12,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('mentor_id')->constrained('mentors')->onDelete('cascade');
-            $table->string('subject');
-            $table->text('message');
+            $table->string('subject')->nullable();
+            $table->string('message')->nullable();
+            $table->string('student_filiere')->nullable();
+            $table->string('student_niveau')->nullable(); 
+            $table->integer('student_promotion')->nullable(); 
+            $table->text('student_difficulties')->nullable();
+            $table->text('student_goals')->nullable();
             $table->date('preferred_date')->nullable();
             $table->enum('status', ['pending', 'accepted', 'rejected'])->default('pending');
             $table->text('mentor_note')->nullable();

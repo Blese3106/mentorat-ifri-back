@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AcademicController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\EpreuveController;
 use App\Http\Controllers\Api\AdminMentorController;
@@ -66,4 +67,48 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/offres/{id}',    [OffreController::class, 'update']);
         Route::delete('/offres/{id}', [OffreController::class, 'destroy']);
     });
+
+    Route::prefix('academic')->group(function () {
+ 
+        Route::get('/{requestId}/dossier', [AcademicController::class, 'getDossier']);
+    
+        // Diagnostic
+        Route::get( '/{requestId}/diagnostic', [AcademicController::class, 'getDiagnostic']);
+        Route::post('/{requestId}/diagnostic', [AcademicController::class, 'saveDiagnostic']);
+    
+        // Objectifs
+        Route::get(   '/{requestId}/objectives',  [AcademicController::class, 'getObjectives']);
+        Route::post(  '/{requestId}/objectives',  [AcademicController::class, 'createObjective']);
+        Route::put(   '/objectives/{id}',         [AcademicController::class, 'updateObjective']);
+        Route::delete('/objectives/{id}',         [AcademicController::class, 'deleteObjective']);
+    
+        // Performances
+        Route::get(   '/{requestId}/performances', [AcademicController::class, 'getPerformances']);
+        Route::post(  '/{requestId}/performances', [AcademicController::class, 'savePerformance']);
+        Route::delete('/performances/{id}',        [AcademicController::class, 'deletePerformance']);
+    
+        // Compétences
+        Route::get(   '/{requestId}/competences', [AcademicController::class, 'getCompetences']);
+        Route::post(  '/{requestId}/competences', [AcademicController::class, 'saveCompetence']);
+        Route::delete('/competences/{id}',        [AcademicController::class, 'deleteCompetence']);
+    
+        // Tâches
+        Route::get(   '/{requestId}/tasks',  [AcademicController::class, 'getTasks']);
+        Route::post(  '/{requestId}/tasks',  [AcademicController::class, 'createTask']);
+        Route::put(   '/tasks/{id}',         [AcademicController::class, 'updateTask']);
+        Route::delete('/tasks/{id}',         [AcademicController::class, 'deleteTask']);
+    
+        // Difficultés
+        Route::get(   '/{requestId}/difficulties', [AcademicController::class, 'getDifficulties']);
+        Route::post(  '/{requestId}/difficulties', [AcademicController::class, 'createDifficulty']);
+        Route::put(   '/difficulties/{id}',        [AcademicController::class, 'updateDifficulty']);
+        Route::delete('/difficulties/{id}',        [AcademicController::class, 'deleteDifficulty']);
+    
+        
+        Route::get(   '/{requestId}/reports', [AcademicController::class, 'getReports']);
+        Route::post(  '/{requestId}/reports', [AcademicController::class, 'createReport']);
+        Route::put(   '/reports/{id}',        [AcademicController::class, 'updateReport']);
+        Route::delete('/reports/{id}',        [AcademicController::class, 'deleteReport']);
+    });
+ 
 });

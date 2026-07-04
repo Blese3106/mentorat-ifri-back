@@ -3,9 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class Mentor extends Model
 {
+    use Notifiable;
+
+    public function routeNotificationForMail(): string {
+        return $this->email;
+    }
+
     protected $fillable = [
         'user_id',
         'firstname',
@@ -67,4 +74,6 @@ class Mentor extends Model
     {
         return $this->status === 'approved';
     }
+
+    
 }

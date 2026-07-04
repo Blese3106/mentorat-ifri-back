@@ -11,8 +11,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Auth\Events\PasswordReset;
+use App\Notifications\NewMentorApplication;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class AuthController extends Controller
 {
@@ -103,8 +106,8 @@ class AuthController extends Controller
             if ($request->hasFile('diplome')) {
                 $diplomePath = $request->file('diplome')->store('mentors/diplomes', 'public');
             }
-
-            Mentor::create([
+            
+            $mentor = Mentor::create([
                 'user_id'         => $user->id,
                 'firstname'       => $request->firstname,
                 'lastname'        => $request->lastname,
@@ -130,13 +133,23 @@ class AuthController extends Controller
             ]);
 
             DB::commit();
-            return response()->json(['message' => "Candidature envoyée ! Vous pourrez vous connecter une fois validé."], 201);
+
+            try {
+                $admins = User::where('role', 'admin')->get();
+                NotificationFacade::send($admins, new NewMentorApplication($mentor));
+            } catch (\Exception $e) {
+                Log::warning('Email admin non envoyé : ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'message' => "Candidature envoyée ! Vous pourrez vous connecter une fois validé.",
+            ], 201);
+
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['message' => 'Erreur : ' . $e->getMessage()], 500);
         }
     }
-
 
     public function login(Request $request)
     {

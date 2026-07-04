@@ -7,8 +7,12 @@ use App\Models\ChatMessage;
 use App\Models\Mentor;
 use App\Models\MentoringRequest;
 use App\Models\MentoringSession;
+use App\Notifications\MentoringRequestAccepted;
+use App\Notifications\MentoringRequestRejected;
+use App\Notifications\NewMentoringRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class MentoringRequestController extends Controller
 {
@@ -142,8 +146,13 @@ class MentoringRequestController extends Controller
     {
         $request->validate([
             'mentor_id'      => 'required|exists:mentors,id',
-            'subject'        => 'required|string|max:255',
-            'message'        => 'required|string|min:10',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string|min:10',
+            'student_filiere'      => 'nullable|string|max:20',
+            'student_niveau'       => 'nullable|string|max:10',
+            'student_promotion'    => 'nullable|integer',
+            'student_difficulties' => 'nullable|string|max:1000',
+            'student_goals'        => 'nullable|string|max:1000',
             'preferred_date' => 'nullable|date|after:today',
         ]);
 
@@ -166,11 +175,27 @@ class MentoringRequestController extends Controller
         $req = MentoringRequest::create([
             'student_id'     => Auth::id(),
             'mentor_id'      => $request->mentor_id,
-            'subject'        => $request->subject,
-            'message'        => $request->message,
+            'subject' => $request->subject,
+            'message' => $request->message,
+            'student_filiere'      => $request->student_filiere,
+            'student_niveau'       => $request->student_niveau,
+            'student_promotion'    => $request->student_promotion,
+            'student_difficulties' => $request->student_difficulties,
+            'student_goals'        => $request->student_goals,
             'preferred_date' => $request->preferred_date,
             'status'         => 'pending',
         ]);
+
+        try {
+            $mentorModel = Mentor::find($request->mentor_id);
+            $mentorModel->user->notify(new NewMentoringRequest(
+                Auth::user()->name,
+                $req->subject,
+                $req->message
+            ));
+            } catch (\Exception $e) {
+                Log::warning('Email mentor non envoyé : ' . $e->getMessage());
+            }
 
         return response()->json(['message' => 'Demande envoyée', 'data' => $req->load('mentor')], 201);
     }
@@ -225,6 +250,10 @@ class MentoringRequestController extends Controller
         $mentor = Mentor::where('user_id', Auth::id())->firstOrFail();
         $req    = MentoringRequest::where('mentor_id', $mentor->id)->where('status', 'pending')->findOrFail($id);
         $req->update(['status' => 'accepted', 'mentor_note' => $request->note]);
+        $request_model = MentoringRequest::findOrFail($id);
+        $student = $request_model->student;           // relation user étudiant
+        $mentorName = $request_model->mentor->firstname . ' ' . $request_model->mentor->lastname;
+        $student->notify(new MentoringRequestAccepted($mentorName, $request_model->subject));
         return response()->json(['message' => 'Demande acceptée', 'data' => $req]);
     }
 
@@ -235,6 +264,11 @@ class MentoringRequestController extends Controller
         $mentor = Mentor::where('user_id', Auth::id())->firstOrFail();
         $req    = MentoringRequest::where('mentor_id', $mentor->id)->where('status', 'pending')->findOrFail($id);
         $req->update(['status' => 'rejected', 'mentor_note' => $request->note]);
+        $request_model = MentoringRequest::findOrFail($id);
+        $student = $request_model->student;
+        $mentorName = $request_model->mentor->firstname . ' ' . $request_model->mentor->lastname;
+        $note = $request->input('note');
+        $student->notify(new MentoringRequestRejected($mentorName, $request_model->subject, $note));
         return response()->json(['message' => 'Demande refusée']);
     }
 
